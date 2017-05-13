@@ -3,7 +3,10 @@ import scrapy
 import re
 from scrapy.http import Request
 from urllib import parse
-from ArticleSpider.items import ArticleItem
+from scrapy.loader import ItemLoader
+from ArticleSpider.items import ArticleItem, CustomItemLoader
+
+
 
 from ArticleSpider.utils.common import get_md5
 
@@ -34,30 +37,40 @@ class JobbolerSpider(scrapy.Spider):
     # 解析详情页
     def parseDetail(self, response):
 
-        articleItem = ArticleItem()
+        articleItem = CustomItemLoader()
 
         image_url = response.meta.get("image_url", "")
-        title = response.xpath('//div[@class="entry-header"]/h1/text()').extract_first('')
-        #date = response.xpath('//*[@id="post-111017"]/div[2]/p/text()').extract()[0].strip().replace('·', '').strip()
-        like = response.xpath('//span[contains(@class, "vote-post-up")]/h10/text()').extract()[0]
-        store = response.xpath('//span[contains(@class, "bookmark-btn")]/text()').extract()[0]
-        match_re = re.match(".*?(\d+).*", store)
-        if match_re:
-            store = int(match_re.group(1))
-        else:
-            store = 0
-        comment = response.xpath('//a[@href="#article-comment"]/span/text()').extract()[0]
-        match = re.match(".*?(\d+).*", comment)
-        if match:
-            comment = int(match.group(1))
-        else:
-            comment = 0
-        content = response.xpath('//div[@class="entry"]').extract()[0]
+        # title = response.xpath('//div[@class="entry-header"]/h1/text()').extract_first('')
+        # #date = response.xpath('//*[@id="post-111017"]/div[2]/p/text()').extract()[0].strip().replace('·', '').strip()
+        # like = response.xpath('//span[contains(@class, "vote-post-up")]/h10/text()').extract()[0]
+        # store = response.xpath('//span[contains(@class, "bookmark-btn")]/text()').extract()[0]
+        # match_re = re.match(".*?(\d+).*", store)
+        # if match_re:
+        #     store = int(match_re.group(1))
+        # else:
+        #     store = 0
+        # comment = response.xpath('//a[@href="#article-comment"]/span/text()').extract()[0]
+        # match = re.match(".*?(\d+).*", comment)
+        # if match:
+        #     comment = int(match.group(1))
+        # else:
+        #     comment = 0
+        # content = response.xpath('//div[@class="entry"]').extract()[0]
 
-        articleItem["title"] = title
-        articleItem["url"] = response.url
-        articleItem["image"] = [image_url]
-        articleItem["url_id"] = get_md5(response.url)
+        # articleItem["title"] = title
+        # articleItem["url"] = response.url
+        # articleItem["image"] = [image_url]
+        # articleItem["url_id"] = get_md5(response.url)
+
+        item_loader = CustomItemLoader(item=ArticleItem(), response=response)
+        item_loader.add_xpath('title', '//div[@class="entry-header"]/h1/text()')
+        item_loader.add_value('url_id', get_md5(response.url))
+        item_loader.add_value('url', response.url)
+        item_loader.add_value('image', [image_url])
+
+        articleItem = item_loader.load_item()
+
+
         yield  articleItem
 
 
